@@ -27,7 +27,7 @@ public class VectorsTable implements StructConverter {
 	private VectorFunc[] vectors;
 	
 	public VectorsTable(FlatProgramAPI fpa, BinaryReader reader) throws IOException {
-		if (reader.length() < VECTORS_COUNT) {
+		if (reader.length() < VECTORS_SIZE) {
 			return;
 		}
 		
