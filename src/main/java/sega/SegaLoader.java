@@ -38,6 +38,7 @@ import ghidra.program.model.data.DataUtilities.ClearDataMode;
 import ghidra.program.model.data.WordDataType;
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
 import ghidra.program.model.listing.Program;
+import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.util.CodeUnitInsertionException;
@@ -83,7 +84,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		FlatProgramAPI fpa = new FlatProgramAPI(program, monitor);
 		
 		vectors = new VectorsTable(fpa, reader);
-		header = new GameHeader(fpa, reader);
+		header = new GameHeader(reader);
 		
 		createSegments(fpa, provider, program, monitor);
 		markVectorsTable(program, fpa);
@@ -97,9 +98,6 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 			DomainObject domainObject, boolean isLoadIntoProgram) {
 		List<Option> list =
 			super.getDefaultOptions(provider, loadSpec, domainObject, isLoadIntoProgram);
-
-		// TODO: If this loader has custom options, add them to 'list'
-		list.add(new Option("Option name goes here", "Default option value goes here"));
 
 		return list;
 	}
@@ -116,80 +114,81 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 	private void createSegments(FlatProgramAPI fpa, ByteProvider provider, Program program, TaskMonitor monitor) throws IOException {
 		InputStream romStream = provider.getInputStream(0);
 		
-		createSegment(fpa, romStream, "ROM", fpa.toAddr(0x000000), Math.min(romStream.available(), 0x3FFFFF), true, false, true);
+		createSegment(fpa, romStream, "ROM", 0x000000L, Math.min(romStream.available(), 0x3FFFFFL), true, false, true);
 		
 		if (OptionDialog.YES_OPTION == OptionDialog.showYesNoDialogWithNoAsDefaultButton(null, "Question", "Create Sega CD segment?")) {
-			if (romStream.available() > 0x3FFFFF) {
-				InputStream epaStream = provider.getInputStream(0x400000);
+			if (romStream.available() > 0x3FFFFFL) {
+				InputStream epaStream = provider.getInputStream(0x400000L);
 				
-				createSegment(fpa, epaStream, "EPA", fpa.toAddr(0x400000), 0x400000, true, true, false);
+				createSegment(fpa, epaStream, "EPA", 0x400000L, 0x400000L, true, true, false);
 			} else {
-				createSegment(fpa, null, "EPA", fpa.toAddr(0x400000), 0x400000, true, true, false);
+				createSegment(fpa, null, "EPA", 0x400000L, 0x400000L, true, true, false);
 			}
 		}
 		
 		if (OptionDialog.YES_OPTION == OptionDialog.showYesNoDialogWithNoAsDefaultButton(null, "Question", "Create Sega 32X segment?")) {
-			createSegment(fpa, null, "32X", fpa.toAddr(0x800000), 0x200000, true, true, false);
+			createSegment(fpa, null, "32X", 0x800000L, 0x200000L, true, true, false);
 		}
 		
-		createSegment(fpa, null, "Z80", fpa.toAddr(0xA00000), 0x10000, true, true, false);
-		createNamedDwordArray(fpa, program, fpa.toAddr(0xA04000), "Z80_YM2612", 1);
+		createSegment(fpa, null, "Z80", 0xA00000L, 0x10000L, true, true, false);
+		createNamedDwordArray(fpa, program, 0xA04000L, "Z80_YM2612", 1);
 		
-		createSegment(fpa, null, "SYS1", fpa.toAddr(0xA10000), 16 * 2, true, true, false);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10000), "IO_PCBVER", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10002), "IO_CT1_DATA", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10004), "IO_CT2_DATA", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10006), "IO_EXT_DATA", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10008), "IO_CT1_CTRL", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1000A), "IO_CT2_CTRL", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1000C), "IO_EXT_CTRL", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1000E), "IO_CT1_RX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10010), "IO_CT1_TX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10012), "IO_CT1_SMODE", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10014), "IO_CT2_RX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10016), "IO_CT2_TX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA10018), "IO_CT2_SMODE", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1001A), "IO_EXT_RX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1001C), "IO_EXT_TX", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA1001E), "IO_EXT_SMODE", 1);
+		createSegment(fpa, null, "SYS1", 0xA10000L, 16 * 2, true, true, false);
+		createNamedWordArray(fpa, program, 0xA10000L, "IO_PCBVER", 1);
+		createNamedWordArray(fpa, program, 0xA10002L, "IO_CT1_DATA", 1);
+		createNamedWordArray(fpa, program, 0xA10004L, "IO_CT2_DATA", 1);
+		createNamedWordArray(fpa, program, 0xA10006L, "IO_EXT_DATA", 1);
+		createNamedWordArray(fpa, program, 0xA10008L, "IO_CT1_CTRL", 1);
+		createNamedWordArray(fpa, program, 0xA1000AL, "IO_CT2_CTRL", 1);
+		createNamedWordArray(fpa, program, 0xA1000CL, "IO_EXT_CTRL", 1);
+		createNamedWordArray(fpa, program, 0xA1000EL, "IO_CT1_RX", 1);
+		createNamedWordArray(fpa, program, 0xA10010L, "IO_CT1_TX", 1);
+		createNamedWordArray(fpa, program, 0xA10012L, "IO_CT1_SMODE", 1);
+		createNamedWordArray(fpa, program, 0xA10014L, "IO_CT2_RX", 1);
+		createNamedWordArray(fpa, program, 0xA10016L, "IO_CT2_TX", 1);
+		createNamedWordArray(fpa, program, 0xA10018L, "IO_CT2_SMODE", 1);
+		createNamedWordArray(fpa, program, 0xA1001AL, "IO_EXT_RX", 1);
+		createNamedWordArray(fpa, program, 0xA1001CL, "IO_EXT_TX", 1);
+		createNamedWordArray(fpa, program, 0xA1001EL, "IO_EXT_SMODE", 1);
 		
-		createSegment(fpa, null, "SYS2", fpa.toAddr(0xA11000), 2, true, true, false);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA11000), "IO_RAMMODE", 1);
+		createSegment(fpa, null, "SYS2", 0xA11000L, 2, true, true, false);
+		createNamedWordArray(fpa, program, 0xA11000L, "IO_RAMMODE", 1);
 		
-		createSegment(fpa, null, "Z802", fpa.toAddr(0xA11100), 2, true, true, false);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA11100), "IO_Z80BUS", 1);
+		createSegment(fpa, null, "Z802", 0xA11100L, 2, true, true, false);
+		createNamedWordArray(fpa, program, 0xA11100L, "IO_Z80BUS", 1);
 
-		createSegment(fpa, null, "Z803", fpa.toAddr(0xA11200), 2, true, true, false);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xA11200), "IO_Z80RES", 1);
+		createSegment(fpa, null, "Z803", 0xA11200L, 2, true, true, false);
+		createNamedWordArray(fpa, program, 0xA11200L, "IO_Z80RES", 1);
 
-		createSegment(fpa, null, "FDC", fpa.toAddr(0xA12000), 0x100, true, true, false);
-		createNamedByteArray(fpa, program, fpa.toAddr(0xA12000), "IO_FDC", 0x100);
+		createSegment(fpa, null, "FDC", 0xA12000L, 0x100, true, true, false);
+		createNamedByteArray(fpa, program, 0xA12000L, "IO_FDC", 0x100);
 
-		createSegment(fpa, null, "TIME", fpa.toAddr(0xA13000), 0x100, true, true, false);
-		createNamedByteArray(fpa, program, fpa.toAddr(0xA13000), "IO_TIME", 0x100);
+		createSegment(fpa, null, "TIME", 0xA13000L, 0x100, true, true, false);
+		createNamedByteArray(fpa, program, 0xA13000L, "IO_TIME", 0x100);
 
-		createSegment(fpa, null, "TMSS", fpa.toAddr(0xA14000), 4, true, true, false);
-		createNamedDwordArray(fpa, program, fpa.toAddr(0xA14000), "IO_TMSS", 1);
+		createSegment(fpa, null, "TMSS", 0xA14000L, 4, true, true, false);
+		createNamedDwordArray(fpa, program, 0xA14000L, "IO_TMSS", 1);
 
-		createSegment(fpa, null, "VDP", fpa.toAddr(0xC00000), 2 * 9, true, true, false);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC00000), "VDP_DATA", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC00002), "VDP__DATA", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC00004), "VDP_CTRL", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC00006), "VDP__CTRL", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC00008), "VDP_CNTR", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC0000A), "VDP__CNTR", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC0000C), "VDP___CNTR", 1);
-		createNamedWordArray(fpa, program, fpa.toAddr(0xC0000E), "VDP____CNTR", 1);
-		createNamedByteArray(fpa, program, fpa.toAddr(0xC00011), "VDP_PSG", 1);
+		createSegment(fpa, null, "VDP", 0xC00000L, 2 * 9, true, true, false);
+		createNamedWordArray(fpa, program, 0xC00000L, "VDP_DATA", 1);
+		createNamedWordArray(fpa, program, 0xC00002L, "VDP__DATA", 1);
+		createNamedWordArray(fpa, program, 0xC00004L, "VDP_CTRL", 1);
+		createNamedWordArray(fpa, program, 0xC00006L, "VDP__CTRL", 1);
+		createNamedWordArray(fpa, program, 0xC00008L, "VDP_CNTR", 1);
+		createNamedWordArray(fpa, program, 0xC0000AL, "VDP__CNTR", 1);
+		createNamedWordArray(fpa, program, 0xC0000CL, "VDP___CNTR", 1);
+		createNamedWordArray(fpa, program, 0xC0000EL, "VDP____CNTR", 1);
+		createNamedByteArray(fpa, program, 0xC00011L, "VDP_PSG", 1);
 		
-		createSegment(fpa, null, "RAM", fpa.toAddr(0xFF0000), 0x10000, true, true, true);
+		createSegment(fpa, null, "RAM", 0xFF0000L, 0x10000L, true, true, true);
+		createMirrorSegment(program.getMemory(), fpa, "RAM", 0xFF0000L, 0xFFFF0000L, 0x10000L);
 		
 		if (header.hasSRAM()) {
-			Address sramStart = header.getSramStart();
-			Address sramEnd = header.getSramEnd();
+			long sramStart = header.getSramStart();
+			long sramEnd = header.getSramEnd();
 			
-			if (sramStart.getOffset() >= 0x200000 && sramEnd.getOffset() <= 0x20FFFF && sramStart.getOffset() < sramEnd.getOffset()) {
-				createSegment(fpa, null, "SRAM", sramStart, sramEnd.getOffset() - sramStart.getOffset() + 1, true, true, false);
+			if (sramStart >= 0x200000L && sramEnd <= 0x20FFFFL && sramStart < sramEnd) {
+				createSegment(fpa, null, "SRAM", sramStart, sramEnd - sramStart + 1, true, true, false);
 			}
 		}
 	}
@@ -214,70 +213,84 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		}
 	}
 	
-	private void createNamedByteArray(FlatProgramAPI fpa, Program program, Address address, String name, int numElements) {
+	private void createNamedByteArray(FlatProgramAPI fpa, Program program, long address, String name, int numElements) {
 		if (numElements > 1) {
-			CreateArrayCmd arrayCmd = new CreateArrayCmd(address, numElements, ByteDataType.dataType, ByteDataType.dataType.getLength());
+			CreateArrayCmd arrayCmd = new CreateArrayCmd(fpa.toAddr(address), numElements, ByteDataType.dataType, ByteDataType.dataType.getLength());
 			arrayCmd.applyTo(program);
 		} else {
 			try {
-				fpa.createByte(address);
+				fpa.createByte(fpa.toAddr(address));
 			} catch (Exception e) {
 				Msg.error(this, "Cannot create byte. " + e.getMessage());
 			}
 		}
 		
 		try {
-			program.getSymbolTable().createLabel(address, name, SourceType.IMPORTED);
+			program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
 		} catch (InvalidInputException e) {
 			Msg.error(this, String.format("%s : Error creating array %s", getName(), name));
 		}
 	}
 	
-	private void createNamedWordArray(FlatProgramAPI fpa, Program program, Address address, String name, int numElements) {
+	private void createNamedWordArray(FlatProgramAPI fpa, Program program, long address, String name, int numElements) {
 		if (numElements > 1) {
-			CreateArrayCmd arrayCmd = new CreateArrayCmd(address, numElements, WordDataType.dataType, WordDataType.dataType.getLength());
+			CreateArrayCmd arrayCmd = new CreateArrayCmd(fpa.toAddr(address), numElements, WordDataType.dataType, WordDataType.dataType.getLength());
 			arrayCmd.applyTo(program);
 		} else {
 			try {
-				fpa.createWord(address);
+				fpa.createWord(fpa.toAddr(address));
 			} catch (Exception e) {
 				Msg.error(this, "Cannot create word. " + e.getMessage());
 			}
 		}
 		
 		try {
-			program.getSymbolTable().createLabel(address, name, SourceType.IMPORTED);
+			program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
 		} catch (InvalidInputException e) {
 			Msg.error(this, String.format("%s : Error creating array %s", getName(), name));
 		}
 	}
 	
-	private void createNamedDwordArray(FlatProgramAPI fpa, Program program, Address address, String name, int numElements) {
+	private void createNamedDwordArray(FlatProgramAPI fpa, Program program, long address, String name, int numElements) {
 		if (numElements > 1) {
-			CreateArrayCmd arrayCmd = new CreateArrayCmd(address, numElements, DWordDataType.dataType, DWordDataType.dataType.getLength());
+			CreateArrayCmd arrayCmd = new CreateArrayCmd(fpa.toAddr(address), numElements, DWordDataType.dataType, DWordDataType.dataType.getLength());
 			arrayCmd.applyTo(program);
 		} else {
 			try {
-				fpa.createDWord(address);
+				fpa.createDWord(fpa.toAddr(address));
 			} catch (Exception e) {
 				Msg.error(this, "Cannot create dword. " + e.getMessage());
 			}
 		}
 		
 		try {
-			program.getSymbolTable().createLabel(address, name, SourceType.IMPORTED);
+			program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
 		} catch (InvalidInputException e) {
 			Msg.error(this, String.format("%s : Error creating array %s", getName(), name));
 		}
 	}
 	
-	private void createSegment(FlatProgramAPI fpa, InputStream stream, String name, Address address, long size, boolean read, boolean write, boolean execute) {
+	private void createSegment(FlatProgramAPI fpa, InputStream stream, String name, long address, long size, boolean read, boolean write, boolean execute) {
 		MemoryBlock block = null;
 		try {
-			block = fpa.createMemoryBlock(name, address, stream, size, false);
+			block = fpa.createMemoryBlock(name, fpa.toAddr(address), stream, size, false);
 			block.setRead(read);
 			block.setWrite(write);
 			block.setExecute(execute);
+		} catch (Exception e) {
+			Msg.error(this, String.format("Error creating %s segment", name));
+		}
+	}
+	
+	private void createMirrorSegment(Memory memory, FlatProgramAPI fpa, String name, long base, long new_addr, long size) {
+		MemoryBlock block = null;
+		Address baseAddress = fpa.toAddr(base);
+		try {
+			block = memory.createByteMappedBlock(name, fpa.toAddr(new_addr), baseAddress, size);
+			MemoryBlock baseBlock = memory.getBlock(baseAddress);
+			block.setRead(baseBlock.isRead());
+			block.setWrite(baseBlock.isWrite());
+			block.setExecute(baseBlock.isExecute());
 		} catch (Exception e) {
 			Msg.error(this, String.format("Error creating %s segment", name));
 		}

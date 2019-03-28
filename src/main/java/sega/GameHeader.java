@@ -4,8 +4,6 @@ import java.io.IOException;
 
 import ghidra.app.util.bin.BinaryReader;
 import ghidra.app.util.bin.StructConverter;
-import ghidra.program.flatapi.FlatProgramAPI;
-import ghidra.program.model.address.Address;
 import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.Structure;
 import ghidra.program.model.data.StructureDataType;
@@ -18,17 +16,14 @@ public class GameHeader implements StructConverter {
     private byte[] version = null;
     private short checksum = 0;
     private byte[] ioSupport = null;
-    private Address romStart = null, romEnd = null;
-    private Address ramStart = null, ramEnd = null;
+    private long romStart = 0, romEnd = 0;
+    private long ramStart = 0, ramEnd = 0;
     private byte[] sramCode = null;
     private byte unused = 0;
-    private Address sramStart = null, sramEnd = null;
+    private long sramStart = 0, sramEnd = 0;
     private byte[] notes = null;
-
-    FlatProgramAPI fpa;
     
-    public GameHeader(FlatProgramAPI fpa, BinaryReader reader) throws IOException {
-        this.fpa = fpa;
+    public GameHeader(BinaryReader reader) throws IOException {
         
         if (reader.length() < 0x200) {
             return;
@@ -43,14 +38,14 @@ public class GameHeader implements StructConverter {
         version = reader.readNextByteArray(0x0E);
         checksum = (short) reader.readNextUnsignedShort();
         ioSupport = reader.readNextByteArray(0x10);
-        romStart = fpa.toAddr(reader.readNextUnsignedInt());
-        romEnd = fpa.toAddr(reader.readNextUnsignedInt());
-        ramStart = fpa.toAddr(reader.readNextUnsignedInt());
-        ramEnd = fpa.toAddr(reader.readNextUnsignedInt());
+        romStart = reader.readNextUnsignedInt();
+        romEnd = reader.readNextUnsignedInt();
+        ramStart = reader.readNextUnsignedInt();
+        ramEnd = reader.readNextUnsignedInt();
         sramCode = reader.readNextByteArray(0x03);
         unused = reader.readNextByte();
-        sramStart = fpa.toAddr(reader.readNextUnsignedInt());
-        sramEnd = fpa.toAddr(reader.readNextUnsignedInt());
+        sramStart = reader.readNextUnsignedInt();
+        sramEnd = reader.readNextUnsignedInt();
         notes = reader.readNextByteArray(0x44);
     }
     
@@ -106,19 +101,19 @@ public class GameHeader implements StructConverter {
         return ioSupport;
     }
     
-    public Address getRomStart() {
+    public long getRomStart() {
         return romStart;
     }
     
-    public Address getRomEnd() {
+    public long getRomEnd() {
         return romEnd;
     }
     
-    public Address getRamStart() {
+    public long getRamStart() {
         return ramStart;
     }
     
-    public Address getRamEnd() {
+    public long getRamEnd() {
         return ramEnd;
     }
     
@@ -130,11 +125,11 @@ public class GameHeader implements StructConverter {
     	return unused;
     }
     
-    public Address getSramStart() {
+    public long getSramStart() {
         return sramStart;
     }
     
-    public Address getSramEnd() {
+    public long getSramEnd() {
         return sramEnd;
     }
     
