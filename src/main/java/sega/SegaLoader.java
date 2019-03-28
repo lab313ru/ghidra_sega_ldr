@@ -276,7 +276,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		try {
 			block = fpa.createMemoryBlock(name, address, stream, size, false);
 			block.setRead(read);
-			block.setWrite(read);
+			block.setWrite(write);
 			block.setExecute(execute);
 		} catch (Exception e) {
 			Msg.error(this, String.format("Error creating %s segment", name));
