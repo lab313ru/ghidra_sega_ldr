@@ -28,7 +28,6 @@ import ghidra.app.util.importer.MemoryConflictHandler;
 import ghidra.app.util.importer.MessageLog;
 import ghidra.app.util.opinion.AbstractLibrarySupportLoader;
 import ghidra.app.util.opinion.LoadSpec;
-import ghidra.framework.model.DomainObject;
 import ghidra.framework.store.LockException;
 import ghidra.program.flatapi.FlatProgramAPI;
 import ghidra.program.model.address.Address;
@@ -47,6 +46,7 @@ import ghidra.program.model.mem.MemoryConflictException;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.util.CodeUnitInsertionException;
 import ghidra.util.exception.CancelledException;
+import ghidra.util.exception.InvalidInputException;
 import ghidra.util.task.TaskMonitor;
 
 /**
@@ -94,107 +94,80 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		monitor.setMessage(String.format("%s : Loading done", getName()));
 	}
 
-	@Override
-	public List<Option> getDefaultOptions(ByteProvider provider, LoadSpec loadSpec, DomainObject domainObject,
-			boolean isLoadIntoProgram) {
-		List<Option> list = super.getDefaultOptions(provider, loadSpec, domainObject, isLoadIntoProgram);
-
-		return list;
-	}
-
-	@Override
-	public String validateOptions(ByteProvider provider, LoadSpec loadSpec, List<Option> options) {
-
-		// TODO: If this loader has custom options, validate them here. Not all options
-		// require
-		// validation.
-
-		return super.validateOptions(provider, loadSpec, options);
-	}
-
 	private void createSegments(FlatProgramAPI fpa, ByteProvider provider, Program program, TaskMonitor monitor,
 			MessageLog log) throws IOException {
 		InputStream romStream = provider.getInputStream(0);
 
-		createSegment(fpa, romStream, "ROM", 0x000000L, Math.min(romStream.available(), 0x3FFFFFL), true, false, true,
+		createSegment(fpa, romStream, "ROM", 0x000000L, Math.min(romStream.available(), 0x3FFFFFL), true, false, true, false,
 				log);
 
 		if (OptionDialog.YES_OPTION == OptionDialog.showYesNoDialogWithNoAsDefaultButton(null, "Question",
 				"Create Sega CD segment?")) {
 			if (romStream.available() > 0x3FFFFFL) {
-				createSegment(fpa, provider.getInputStream(0x400000L), "EPA", 0x400000L, 0x400000L, true, true, false,
+				createSegment(fpa, provider.getInputStream(0x400000L), "EPA", 0x400000L, 0x400000L, true, true, false, false,
 						log);
 			} else {
-				createSegment(fpa, null, "EPA", 0x400000L, 0x400000L, true, true, false, log);
+				createSegment(fpa, null, "EPA", 0x400000L, 0x400000L, true, true, false, false, log);
 			}
 		}
 
 		if (OptionDialog.YES_OPTION == OptionDialog.showYesNoDialogWithNoAsDefaultButton(null, "Question",
 				"Create Sega 32X segment?")) {
-			createSegment(fpa, null, "32X", 0x800000L, 0x200000L, true, true, false, log);
+			createSegment(fpa, null, "32X", 0x800000L, 0x200000L, true, true, false, false, log);
 		}
 
-		createSegment(fpa, null, "Z80", 0xA00000L, 0x10000L, true, true, false, log);
-		createNamedArray(fpa, program, 0xA04000L, "Z80_YM2612", 1, DWordDataType.dataType, log);
+		createSegment(fpa, null, "Z80", 0xA00000L, 0x10000L, true, true, false, false, log);
+		createNamedData(fpa, program, 0xA04000L, "Z80_YM2612", DWordDataType.dataType, log);
 
-		createSegment(fpa, null, "SYS1", 0xA10000L, 16 * 2, true, true, false, log);
-		createNamedArray(fpa, program, 0xA10000L, "IO_PCBVER", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10002L, "IO_CT1_DATA", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10004L, "IO_CT2_DATA", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10006L, "IO_EXT_DATA", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10008L, "IO_CT1_CTRL", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1000AL, "IO_CT2_CTRL", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1000CL, "IO_EXT_CTRL", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1000EL, "IO_CT1_RX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10010L, "IO_CT1_TX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10012L, "IO_CT1_SMODE", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10014L, "IO_CT2_RX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10016L, "IO_CT2_TX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA10018L, "IO_CT2_SMODE", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1001AL, "IO_EXT_RX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1001CL, "IO_EXT_TX", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xA1001EL, "IO_EXT_SMODE", 1, WordDataType.dataType, log);
+		createSegment(fpa, null, "SYS1", 0xA10000L, 16 * 2, true, true, false, true, log);
+		createNamedData(fpa, program, 0xA10000L, "IO_PCBVER", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10002L, "IO_CT1_DATA", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10004L, "IO_CT2_DATA", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10006L, "IO_EXT_DATA", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10008L, "IO_CT1_CTRL", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1000AL, "IO_CT2_CTRL", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1000CL, "IO_EXT_CTRL", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1000EL, "IO_CT1_RX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10010L, "IO_CT1_TX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10012L, "IO_CT1_SMODE", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10014L, "IO_CT2_RX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10016L, "IO_CT2_TX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA10018L, "IO_CT2_SMODE", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1001AL, "IO_EXT_RX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1001CL, "IO_EXT_TX", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xA1001EL, "IO_EXT_SMODE", WordDataType.dataType, log);
 
-		createSegment(fpa, null, "SYS2", 0xA11000L, 2, true, true, false, log);
-		createNamedArray(fpa, program, 0xA11000L, "IO_RAMMODE", 1, WordDataType.dataType, log);
+		createSegment(fpa, null, "SYS2", 0xA11000L, 2, true, true, false, true, log);
+		createNamedData(fpa, program, 0xA11000L, "IO_RAMMODE", WordDataType.dataType, log);
 
-		createSegment(fpa, null, "Z802", 0xA11100L, 2, true, true, false, log);
-		createNamedArray(fpa, program, 0xA11100L, "IO_Z80BUS", 1, WordDataType.dataType, log);
+		createSegment(fpa, null, "Z802", 0xA11100L, 2, true, true, false, true, log);
+		createNamedData(fpa, program, 0xA11100L, "IO_Z80BUS", WordDataType.dataType, log);
 
-		createSegment(fpa, null, "Z803", 0xA11200L, 2, true, true, false, log);
-		createNamedArray(fpa, program, 0xA11200L, "IO_Z80RES", 1, WordDataType.dataType, log);
+		createSegment(fpa, null, "Z803", 0xA11200L, 2, true, true, false, true, log);
+		createNamedData(fpa, program, 0xA11200L, "IO_Z80RES", WordDataType.dataType, log);
 
-		createSegment(fpa, null, "FDC", 0xA12000L, 0x100, true, true, false, log);
+		createSegment(fpa, null, "FDC", 0xA12000L, 0x100, true, true, false, true, log);
 		createNamedArray(fpa, program, 0xA12000L, "IO_FDC", 0x100, ByteDataType.dataType, log);
 
-		createSegment(fpa, null, "TIME", 0xA13000L, 0x100, true, true, false, log);
+		createSegment(fpa, null, "TIME", 0xA13000L, 0x100, true, true, false, true, log);
 		createNamedArray(fpa, program, 0xA13000L, "IO_TIME", 0x100, ByteDataType.dataType, log);
 
-		createSegment(fpa, null, "TMSS", 0xA14000L, 4, true, true, false, log);
-		createNamedArray(fpa, program, 0xA14000L, "IO_TMSS", 1, DWordDataType.dataType, log);
+		createSegment(fpa, null, "TMSS", 0xA14000L, 4, true, true, false, true, log);
+		createNamedData(fpa, program, 0xA14000L, "IO_TMSS", DWordDataType.dataType, log);
 
-		createSegment(fpa, null, "VDP", 0xC00000L, 2 * 9, true, true, false, log);
-		createNamedArray(fpa, program, 0xC00000L, "VDP_DATA", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC00002L, "VDP__DATA", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC00004L, "VDP_CTRL", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC00006L, "VDP__CTRL", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC00008L, "VDP_CNTR", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC0000AL, "VDP__CNTR", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC0000CL, "VDP___CNTR", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC0000EL, "VDP____CNTR", 1, WordDataType.dataType, log);
-		createNamedArray(fpa, program, 0xC00011L, "VDP_PSG", 1, ByteDataType.dataType, log);
+		createSegment(fpa, null, "VDP", 0xC00000L, 2 * 9, true, true, false, true, log);
+		createNamedData(fpa, program, 0xC00000L, "VDP_DATA", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC00002L, "VDP__DATA", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC00004L, "VDP_CTRL", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC00006L, "VDP__CTRL", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC00008L, "VDP_CNTR", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC0000AL, "VDP__CNTR", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC0000CL, "VDP___CNTR", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC0000EL, "VDP____CNTR", WordDataType.dataType, log);
+		createNamedData(fpa, program, 0xC00011L, "VDP_PSG", ByteDataType.dataType, log);
 
-		createSegment(fpa, null, "RAM", 0xFF0000L, 0x10000L, true, true, true, log);
+		createSegment(fpa, null, "RAM", 0xFF0000L, 0x10000L, true, true, true, false, log);
 		createMirrorSegment(program.getMemory(), fpa, "RAM", 0xFF0000L, 0xFFFF0000L, 0x10000L, log);
-
-		if (header.hasSRAM()) {
-			long sramStart = header.getSramStart();
-			long sramEnd = header.getSramEnd();
-
-			if (sramStart >= 0x200000L && sramEnd <= 0x20FFFFL && sramStart < sramEnd) {
-				createSegment(fpa, null, "SRAM", sramStart, sramEnd - sramStart + 1, true, true, false, log);
-			}
-		}
 	}
 
 	private void markVectorsTable(Program program, FlatProgramAPI fpa, MessageLog log) {
@@ -218,38 +191,41 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 			log.appendException(e);
 		}
 	}
-
-	private void createNamedArray(FlatProgramAPI fpa, Program program, long address, String name, int numElements,
-			DataType type, MessageLog log) {
-		if (numElements > 1) {
-			CreateArrayCmd arrayCmd = new CreateArrayCmd(fpa.toAddr(address), numElements, type,
-					ByteDataType.dataType.getLength());
+	
+	private void createNamedArray(FlatProgramAPI fpa, Program program, long address, String name, int numElements, DataType type, MessageLog log) {
+		try {
+			CreateArrayCmd arrayCmd = new CreateArrayCmd(fpa.toAddr(address), numElements, type, type.getLength());
 			arrayCmd.applyTo(program);
-		} else {
-			try {
-				if (type.equals(ByteDataType.dataType)) {
-					fpa.createByte(fpa.toAddr(address));
-				} else if (type.equals(WordDataType.dataType)) {
-					fpa.createWord(fpa.toAddr(address));
-				} else if (type.equals(DWordDataType.dataType)) {
-					fpa.createDWord(fpa.toAddr(address));
-				}
-				program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
-			} catch (Exception e) {
-				log.appendException(e);
+			program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
+		} catch (InvalidInputException e) {
+			log.appendException(e);
+		}
+	}
+
+	private void createNamedData(FlatProgramAPI fpa, Program program, long address, String name, DataType type, MessageLog log) {
+		try {
+			if (type.equals(ByteDataType.dataType)) {
+				fpa.createByte(fpa.toAddr(address));
+			} else if (type.equals(WordDataType.dataType)) {
+				fpa.createWord(fpa.toAddr(address));
+			} else if (type.equals(DWordDataType.dataType)) {
+				fpa.createDWord(fpa.toAddr(address));
 			}
+			program.getSymbolTable().createLabel(fpa.toAddr(address), name, SourceType.IMPORTED);
+		} catch (Exception e) {
+			log.appendException(e);
 		}
 	}
 
 	private void createSegment(FlatProgramAPI fpa, InputStream stream, String name, long address, long size,
-			boolean read, boolean write, boolean execute, MessageLog log) {
+			boolean read, boolean write, boolean execute, boolean volatil, MessageLog log) {
 		MemoryBlock block = null;
 		try {
 			block = fpa.createMemoryBlock(name, fpa.toAddr(address), stream, size, false);
 			block.setRead(read);
 			block.setWrite(write);
 			block.setExecute(execute);
-			block.setVolatile(block.isVolatile());
+			block.setVolatile(volatil);
 		} catch (Exception e) {
 			log.appendException(e);
 		}
