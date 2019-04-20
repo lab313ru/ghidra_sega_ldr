@@ -9,7 +9,7 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.Structure;
 import ghidra.program.model.data.StructureDataType;
 
-public class VectorsTable implements StructConverter {
+class VectorsTable implements StructConverter {
 	private static final int VECTORS_SIZE = 0x100;
 	private static final int VECTORS_COUNT = VECTORS_SIZE / 4;
 	

@@ -8,7 +8,7 @@ import ghidra.program.model.data.DataType;
 import ghidra.program.model.data.Structure;
 import ghidra.program.model.data.StructureDataType;
 
-public class GameHeader implements StructConverter {
+class GameHeader implements StructConverter {
     private byte[] consoleName = null;
     private byte[] releaseDate = null;
     private byte[] domesticName = null;
@@ -23,7 +23,7 @@ public class GameHeader implements StructConverter {
     private long sramStart = 0, sramEnd = 0;
     private byte[] notes = null;
     
-    public GameHeader(BinaryReader reader) throws IOException {
+    GameHeader(BinaryReader reader) throws IOException {
         
         if (reader.length() < 0x200) {
             return;
@@ -138,7 +138,7 @@ public class GameHeader implements StructConverter {
             return false;
         }
         
-        return sramCode[0] == 'R' && sramCode[1] == 'A' && sramCode[2] == 0xF8;
+        return sramCode[0] == (byte)'R' && sramCode[1] == (byte)'A' && sramCode[2] == (byte)0xF8;
     }
     
     public byte[] getNotes() {

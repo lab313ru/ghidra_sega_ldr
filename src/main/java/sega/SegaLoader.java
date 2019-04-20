@@ -45,7 +45,6 @@ import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.mem.MemoryConflictException;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.util.CodeUnitInsertionException;
-import ghidra.util.exception.CancelledException;
 import ghidra.util.exception.InvalidInputException;
 import ghidra.util.task.TaskMonitor;
 
@@ -68,7 +67,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 
 		BinaryReader reader = new BinaryReader(provider, false);
 
-		if (reader.readAsciiString(0x100, 4).equals(new String("SEGA"))) {
+		if (reader.readAsciiString(0x100, 4).equals("SEGA")) {
 			loadSpecs.add(new LoadSpec(this, 0, new LanguageCompilerSpecPair("68000:BE:32:MC68020", "default"), true));
 		}
 
@@ -77,7 +76,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 
 	@Override
 	protected void load(ByteProvider provider, LoadSpec loadSpec, List<Option> options, Program program,
-			MemoryConflictHandler handler, TaskMonitor monitor, MessageLog log) throws CancelledException, IOException {
+			MemoryConflictHandler handler, TaskMonitor monitor, MessageLog log) throws IOException {
 
 		monitor.setMessage(String.format("%s : Start loading", getName()));
 
@@ -87,15 +86,15 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		vectors = new VectorsTable(fpa, reader);
 		header = new GameHeader(reader);
 
-		createSegments(fpa, provider, program, monitor, log);
+		createSegments(fpa, provider, program, log);
 		markVectorsTable(program, fpa, log);
 		markHeader(program, fpa, log);
 
 		monitor.setMessage(String.format("%s : Loading done", getName()));
 	}
 
-	private void createSegments(FlatProgramAPI fpa, ByteProvider provider, Program program, TaskMonitor monitor,
-			MessageLog log) throws IOException {
+	private void createSegments(FlatProgramAPI fpa, ByteProvider provider, Program program,
+								MessageLog log) throws IOException {
 		InputStream romStream = provider.getInputStream(0);
 
 		createSegment(fpa, romStream, "ROM", 0x000000L, Math.min(romStream.available(), 0x3FFFFFL), true, false, true, false,
@@ -219,7 +218,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 
 	private void createSegment(FlatProgramAPI fpa, InputStream stream, String name, long address, long size,
 			boolean read, boolean write, boolean execute, boolean volatil, MessageLog log) {
-		MemoryBlock block = null;
+		MemoryBlock block;
 		try {
 			block = fpa.createMemoryBlock(name, fpa.toAddr(address), stream, size, false);
 			block.setRead(read);
@@ -233,7 +232,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 
 	private void createMirrorSegment(Memory memory, FlatProgramAPI fpa, String name, long base, long new_addr,
 			long size, MessageLog log) {
-		MemoryBlock block = null;
+		MemoryBlock block;
 		Address baseAddress = fpa.toAddr(base);
 		try {
 			block = memory.createByteMappedBlock(name, fpa.toAddr(new_addr), baseAddress, size);

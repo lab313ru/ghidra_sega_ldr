@@ -3,8 +3,8 @@ package sega;
 import ghidra.program.model.address.Address;
 
 public class VectorFunc {
-	private Address address;
-	private String name;
+	private final Address address;
+	private final String name;
 	
 	public VectorFunc(Address address, String name) {
 		this.address = address;
