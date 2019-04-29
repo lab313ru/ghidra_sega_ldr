@@ -53,12 +53,14 @@ import ghidra.util.task.TaskMonitor;
  */
 public class SegaLoader extends AbstractLibrarySupportLoader {
 
+	public static final String LOADER_NAME = "Sega Mega Drive / Genesis Loader";
+	
 	private VectorsTable vectors;
 	private GameHeader header;
 
 	@Override
 	public String getName() {
-		return "Sega Mega Drive / Genesis Loader";
+		return LOADER_NAME;
 	}
 
 	@Override

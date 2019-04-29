@@ -13,7 +13,7 @@ class VectorsTable implements StructConverter {
 	private static final int VECTORS_SIZE = 0x100;
 	private static final int VECTORS_COUNT = VECTORS_SIZE / 4;
 	
-	private static final String[] VECTOR_NAMES = {
+	public static final String[] VECTOR_NAMES = {
 			"SSP", "Reset", "BusErr", "AdrErr", "InvOpCode", "DivBy0", "Check", "TrapV", "GPF", "Trace",
 			"Reserv0", "Reserv1", "Reserv2", "Reserv3", "Reserv4", "BadInt", "Reserv10", "Reserv11",
 			"Reserv12", "Reserv13", "Reserv14", "Reserv15", "Reserv16", "Reserv17", "BadIRQ", "IRQ1",
