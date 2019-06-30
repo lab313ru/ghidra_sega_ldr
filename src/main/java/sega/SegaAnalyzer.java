@@ -43,7 +43,7 @@ public class SegaAnalyzer extends AbstractAnalyzer {
 	
 	@Override
 	public boolean getDefaultEnablement(Program program) {
-		return isSegaLoader(program);
+		return false;
 	}
 	
 	@Override
