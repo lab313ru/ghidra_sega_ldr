@@ -18,6 +18,7 @@ package sega;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import docking.widgets.OptionDialog;
 import ghidra.app.cmd.data.CreateArrayCmd;
@@ -100,6 +101,11 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 		createSegment(fpa, romStream, "ROM", 0x000000L, Math.min(romStream.available(), 0x3FFFFFL), true, false, true, false,
 				log);
 
+		try {
+			TimeUnit.SECONDS.sleep(1);
+		} catch (InterruptedException e) {
+		}
+		
 		if (OptionDialog.YES_OPTION == OptionDialog.showYesNoDialogWithNoAsDefaultButton(null, "Question",
 				"Create Sega CD segment?")) {
 			if (romStream.available() > 0x3FFFFFL) {
