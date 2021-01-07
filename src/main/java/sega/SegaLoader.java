@@ -45,7 +45,6 @@ import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.mem.MemoryConflictException;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.program.model.util.CodeUnitInsertionException;
-import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.exception.InvalidInputException;
 import ghidra.util.task.TaskMonitor;
 
@@ -249,7 +248,7 @@ public class SegaLoader extends AbstractLibrarySupportLoader {
 			block.setWrite(baseBlock.isWrite());
 			block.setExecute(baseBlock.isExecute());
 			block.setVolatile(baseBlock.isVolatile());
-		} catch (LockException | MemoryConflictException | AddressOverflowException | IllegalArgumentException | DuplicateNameException e) {
+		} catch (LockException | MemoryConflictException | AddressOverflowException | IllegalArgumentException e) {
 			log.appendException(e);
 		}
 	}
