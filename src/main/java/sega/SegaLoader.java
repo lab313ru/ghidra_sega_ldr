@@ -18,9 +18,7 @@ package sega;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
-import docking.widgets.OptionDialog;
 import ghidra.app.cmd.data.CreateArrayCmd;
 import ghidra.app.plugin.core.analysis.AutoAnalysisManager;
 import ghidra.app.util.Option;
